@@ -1,7 +1,7 @@
 FROM node:20-alpine
 
 # Install compose dependencies
-RUN apk add --no-cache bash curl docker-cli py3-pip python3 && pip3 install docker-compose
+RUN apk add --no-cache bash curl docker-cli docker-compose
   
 WORKDIR /usr/src/app
 COPY package*.json ./
