@@ -16,6 +16,8 @@ export default class ProxyHost {
   public proxyUseCustomMethod: string | undefined;
   private timeoutSeconds: number;
   public stopOnTimeoutIfCpuUsageBelow = Infinity;
+  private startCommand?: string;
+  private stopCommand?: string;
 
   private activeSockets: Set<internal.Duplex> = new Set();
   private containerEventEmitter: EventEmitter | null = null;
@@ -36,7 +38,9 @@ export default class ProxyHost {
     displayName: string[],
     proxyHost: string,
     proxyPort: number,
-    timeoutSeconds: number
+    timeoutSeconds: number,
+    startCommand?: string,
+    stopCommand?: string
   ) {
     logger.info({
       host: domain,
@@ -55,6 +59,8 @@ export default class ProxyHost {
     this.proxyHost = proxyHost;
     this.proxyPort = proxyPort;
     this.timeoutSeconds = timeoutSeconds;
+    this.startCommand = startCommand;
+    this.stopCommand = stopCommand;
     dockerManager.isContainerRunning(this.containerName[0]).then(async (res) => {
       if (res) this.resetConnectionTimeout();
       this.containerRunning = res;
@@ -107,6 +113,13 @@ export default class ProxyHost {
     if (this.stoppingHost) return;
     this.stoppingHost = true;
 
+    if (this.stopCommand) {
+      exec(this.stopCommand, (error, stdout, stderr) => {
+        if (error) logger.error({ error }, 'Stop command failed');
+        else logger.info({ stdout }, 'Stop command executed');
+      });
+    } else {}
+    
     this.containerRunning = false;
     this.stopConnectionTimeout();
 
@@ -124,7 +137,14 @@ export default class ProxyHost {
   private async startHost(): Promise<void> {
     if (this.startingHost) return;
     this.startingHost = true;
-
+    
+    if (this.startCommand) {
+      exec(this.startCommand, (error, stdout, stderr) => {
+        if (error) logger.error({ error }, 'Start command failed');
+        else logger.info({ stdout }, 'Start command executed');
+      });
+    } else {}
+    
     await Promise.all(this.containerName.map(async (container) => {
       if (!(await dockerManager.isContainerRunning(container))) {
         logger.info({ container }, 'Starting container');
