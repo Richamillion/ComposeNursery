@@ -18,6 +18,8 @@ type ProxyHostConfig = {
   proxyUseCustomMethod: string
   timeoutSeconds: number
   stopOnTimeoutIfCpuUsageBelow?: number
+  startCommand?: string
+  stopCommand?: string
 }
 type ApplicationConfig = {
   proxyListeningPort: number,
@@ -126,7 +128,9 @@ export default class ConfigManager {
             : [proxyHostConfig.displayName],
           proxyHostConfig.proxyHost,
           proxyHostConfig.proxyPort,
-          proxyHostConfig.timeoutSeconds
+          proxyHostConfig.timeoutSeconds,
+          proxyHostConfig.startCommand,
+          proxyHostConfig.stopCommand
         );
 
         if (proxyHostConfig.proxyUseHttps) {
