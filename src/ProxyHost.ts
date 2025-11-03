@@ -3,7 +3,10 @@ import internal, { EventEmitter } from 'stream';
 import fetch from 'node-fetch';
 import logger from './Logger';
 import DockerManager from './DockerManager';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
+const execAsync = promisify(exec);
 const dockerManager = new DockerManager();
 
 export default class ProxyHost {
@@ -113,49 +116,51 @@ export default class ProxyHost {
     if (this.stoppingHost) return;
     this.stoppingHost = true;
 
+    let stoppedViaCommand = false;
     if (this.stopCommand) {
-      exec(this.stopCommand, (error, stdout, stderr) => {
-        if (error) logger.error({ error }, 'Stop command failed');
-        else logger.info({ stdout }, 'Stop command executed');
-      });
-    } else {}
-    
+      stoppedViaCommand = await this.runCommand(this.stopCommand, 'Stop');
+    }
+
+    if (!stoppedViaCommand) {
+      await Promise.all(this.containerName.map(async (container) => {
+        if (await dockerManager.isContainerRunning(container)) {
+          logger.info({ container }, 'Stopping container via DockerManager fallback');
+          await dockerManager.stopContainer(container);
+          logger.debug({ container }, 'Stopping container complete');
+        }
+      }));
+    }
+
     this.containerRunning = false;
     this.stopConnectionTimeout();
-
-    await Promise.all(this.containerName.map(async (container) => {
-      if (await dockerManager.isContainerRunning(container)) {
-        logger.info({ container, cpuUsageAverage: container === this.containerName[0] ? this.cpuAverage : undefined }, 'Stopping container');
-        await dockerManager.stopContainer(container);
-        logger.debug({ container }, 'Stopping container complete');
-      }
-    }));
-
     this.stoppingHost = false;
   }
+
 
   private async startHost(): Promise<void> {
     if (this.startingHost) return;
     this.startingHost = true;
-    
+
+    let startedViaCommand = false;
     if (this.startCommand) {
-      exec(this.startCommand, (error, stdout, stderr) => {
-        if (error) logger.error({ error }, 'Start command failed');
-        else logger.info({ stdout }, 'Start command executed');
-      });
-    } else {}
-    
-    await Promise.all(this.containerName.map(async (container) => {
-      if (!(await dockerManager.isContainerRunning(container))) {
-        logger.info({ container }, 'Starting container');
-        await dockerManager.startContainer(container);
-        logger.debug({ container }, 'Starting container complete');
-      }
-    }));
+      startedViaCommand = await this.runCommand(this.startCommand, 'Start');
+    }
+
+    if (!startedViaCommand) {
+      await Promise.all(this.containerName.map(async (container) => {
+        if (!(await dockerManager.isContainerRunning(container))) {
+          logger.info({ container }, 'Starting container via DockerManager fallback');
+          await dockerManager.startContainer(container);
+          logger.debug({ container }, 'Starting container complete');
+        }
+      }));
+    }
 
     this.checkContainerReady();
     this.startingHost = false;
   }
+
+
 
   private checkContainerReady() {
     if (this.containerReadyChecking) return;
@@ -249,6 +254,17 @@ export default class ProxyHost {
   private resetCPUAverage(): void {
     this.cpuAverage = 0;
     this.cpuAverageCounter = 0;
+  }
+
+  private async runCommand(command: string, label: string): Promise<boolean> {
+    try {
+      const { stdout, stderr } = await execAsync(command, { timeout: 60000 });
+      logger.info({ label, stdout, stderr }, `${label} command executed`);
+      return true;
+    } catch (error) {
+      logger.error({ label, error }, `${label} command failed`);
+      return false;
+    }
   }
 
   public getHeaders(): { [header: string]: string; } {
