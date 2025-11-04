@@ -21,6 +21,7 @@ export default class ProxyHost {
   public stopOnTimeoutIfCpuUsageBelow = Infinity;
   private startCommand?: string;
   private stopCommand?: string;
+  private isCommandManaged: boolean;
 
   private activeSockets: Set<internal.Duplex> = new Set();
   private containerEventEmitter: EventEmitter | null = null;
@@ -43,7 +44,8 @@ export default class ProxyHost {
     proxyPort: number,
     timeoutSeconds: number,
     startCommand?: string,
-    stopCommand?: string
+    stopCommand?: string,
+    isCommandManaged: boolean = false
   ) {
     logger.info({
       host: domain,
@@ -64,6 +66,14 @@ export default class ProxyHost {
     this.timeoutSeconds = timeoutSeconds;
     this.startCommand = startCommand;
     this.stopCommand = stopCommand;
+    this.isCommandManaged = isCommandManaged;
+
+    if (this.isCommandManaged) {
+        this.containerRunning= false;
+        this.startingHost = false;
+        return;
+    }   
+
     dockerManager.isContainerRunning(this.containerName[0]).then(async (res) => {
       if (res) this.resetConnectionTimeout();
       this.containerRunning = res;

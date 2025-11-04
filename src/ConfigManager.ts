@@ -20,6 +20,7 @@ type ProxyHostConfig = {
   stopOnTimeoutIfCpuUsageBelow?: number
   startCommand?: string
   stopCommand?: string
+  managedByCommand?: boolean
 }
 type ApplicationConfig = {
   proxyListeningPort: number,
@@ -130,7 +131,8 @@ export default class ConfigManager {
           proxyHostConfig.proxyPort,
           proxyHostConfig.timeoutSeconds,
           proxyHostConfig.startCommand,
-          proxyHostConfig.stopCommand
+          proxyHostConfig.stopCommand,
+          !!(proxyHostConfig.startCommand && proxyHostConfig.stopCommand)
         );
 
         if (proxyHostConfig.proxyUseHttps) {
@@ -173,7 +175,7 @@ export default class ConfigManager {
   private static validateProxyHost(proxyHostConfig: Record<string, unknown>): boolean {
     // TODO
     if (!proxyHostConfig.domain) return false;
-    if (!proxyHostConfig.containerName) return false;
+    if (!proxyHostConfig.containerName && (!proxyHostConfig.startCommand || !proxyHostConfig.stopCommand)) return false;
     if (!proxyHostConfig.proxyHost) return false;
     if (!proxyHostConfig.proxyPort) return false;
     if (!proxyHostConfig.timeoutSeconds) return false;

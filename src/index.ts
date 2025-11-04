@@ -43,13 +43,15 @@ proxy.on('error', (err, req, res) => {
   req.headers.host = stripPortHostHeader(req.headers.host);
   logger.debug({ host: req.headers.host, error: err }, 'Error in proxying request');
   if (!req.headers.host) {
-    res.writeHead(400, { 'Content-Type': 'text/plain' });
-    res.write('Error: Request header host wasn\t specified');
-    res.end();
+    if ('writeHead' in res && typeof res.writeHead === 'function') {
+      res.writeHead(400, { 'Content-Type': 'text/plain' });
+      res.write('Error: Request header host wasn\t specified');
+      res.end();
+    }
     return;
   }
   const proxyHost = proxyHosts.get(req.headers.host as string);
-  if (res.writeHead) {
+  if ('writeHead' in res && typeof res.writeHead === 'function') {
     res.writeHead(500, { 'Content-Type': 'text/plain' });
     res.write(`Error: Host is not reachable ${JSON.stringify(proxyHost?.getTarget())}`);
     res.end();
