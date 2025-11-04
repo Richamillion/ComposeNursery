@@ -1,6 +1,6 @@
 {
-  "name": "containernursery",
-  "version": "1.9.0",
+  "name": "composenursery",
+  "version": "1.0.0",
   "description": "Puts Docker Containers to sleep and wakes them back up when they're needed",
   "main": "build/index.js",
   "scripts": {
@@ -11,14 +11,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ItsEcholot/ContainerNursery.git"
+    "url": "git+https://github.com/Richamillion/ComposeNursery.git"
   },
-  "author": "Marc Berchtold",
+  "author": "Michael Rich",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ItsEcholot/ContainerNursery/issues"
+    "url": "https://github.com/Richamillion/ComposeNursery/issues"
   },
-  "homepage": "https://github.com/ItsEcholot/ContainerNursery#readme",
+  "homepage": "https://github.com/Richamillion/ComposeNursery#readme",
   "devDependencies": {
     "@types/dockerode": "^3.2.7",
     "@types/ejs": "^3.1.0",
