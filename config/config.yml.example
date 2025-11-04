@@ -1,19 +1,21 @@
 proxyListeningPort: 80
 proxyHosts:
-  - domain: handbrake.yourdomain.io
-    containerName: handbrake
-    displayName: Handbrake
-    proxyHost: localhost
-    proxyPort: 5800
-    timeoutSeconds: 15
+  # Immich example via docker-compose
+  - domain: immich.richamillion.com
+    displayName: the Immich Stack
+    proxyHost: 192.168.1.10
+    proxyPort: 2283
+    timeoutSeconds: 3600
     stopOnTimeoutIfCpuUsageBelow: 50
-  - domain:
-      - wordpress.yourdomain.io
-      - wordpress.otherdomain.io
-    containerName:
-      - wordpress
-      - mariadb
-    proxyHost: wordpress
-    proxyPort: 3000
-    proxyUseHttps: true
-    timeoutSeconds: 1800
+    proxyUseCustomMethod: GET
+    startCommand: "docker compose -f /app/immich/docker-compose.yml -p immich up -d"
+    stopCommand: "docker compose -f /app/immich/docker-compose.yml -p immich down"
+  # Calibre  
+  - domain: calibre.richamillion.com
+    containerName: calibre
+    displayName: my library
+    proxyHost: 192.168.1.11
+    proxyPort: 8081
+    timeoutSeconds: 3600
+    stopOnTimeoutIfCpuUsageBelow: 50
+    proxyUseCustomMethod: GET
